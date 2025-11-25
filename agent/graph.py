@@ -215,7 +215,7 @@ def should_finish(state: Dict[str, Any]) -> bool:
     return (state.get("current_plan") or "").strip().lower() == "finish"
 
 graph.add_edge("profile_data", "plan_analysis")
-graph.add_conditional_edge("plan_analysis", should_finish, {True: END, False: "execute_tool"})
+graph.add_conditional_edges("plan_analysis", should_finish, {True: END, False: "execute_tool"})
 graph.add_edge("execute_tool", "generate_insight")
 graph.add_edge("generate_insight", "generate_visualization")
 graph.add_edge("generate_visualization", "execute_visualization")

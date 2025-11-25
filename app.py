@@ -9,7 +9,7 @@ from typing import Dict, Any
 
 from agent.graph import app_agent
 from agent.schemas import AgentInsight
-from statistics import generate_descriptive_stats
+from utils.statistics import generate_descriptive_stats
 from utils.pdf_generator import build_report
 
 
