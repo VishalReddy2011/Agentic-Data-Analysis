@@ -1,0 +1,1 @@
+Correlation strength guidelines (rule of thumb): |r| < 0.1: negligible; 0.1 <= |r| < 0.3: small; 0.3 <= |r| < 0.5: moderate; |r| >= 0.5: strong. Consider domain-specific thresholds.

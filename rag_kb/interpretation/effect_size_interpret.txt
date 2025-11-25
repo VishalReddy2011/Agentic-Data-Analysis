@@ -1,0 +1,1 @@
+Interpret effect sizes in context — e.g., Cohen's d: 0.2 small, 0.5 medium, 0.8 large. For business metrics, translate effect sizes into concrete impact (revenue, conversion uplift).

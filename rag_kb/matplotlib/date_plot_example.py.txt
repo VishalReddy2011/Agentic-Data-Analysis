@@ -1,0 +1,8 @@
+import matplotlib.pyplot as plt
+dates = pd.to_datetime(df['{date_col}'])
+vals = df['{value_col}']
+plt.figure()
+plt.plot(dates, vals)
+plt.gcf().autofmt_xdate()
+plt.tight_layout()
+plt.savefig('static/images/{session_id}_plot_{iteration}_date.png')

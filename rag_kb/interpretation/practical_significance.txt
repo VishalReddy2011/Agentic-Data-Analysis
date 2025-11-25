@@ -1,0 +1,1 @@
+Distinguish statistical from practical significance. Even small effects can be important at scale, but contextualize impact.

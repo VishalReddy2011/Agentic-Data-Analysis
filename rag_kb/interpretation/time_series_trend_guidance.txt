@@ -1,0 +1,1 @@
+For time series, decompose into trend, seasonality, and residuals. Use ACF/PACF for autocorrelation checks. Beware of spurious correlations when series are non-stationary.

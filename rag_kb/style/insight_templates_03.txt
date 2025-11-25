@@ -1,0 +1,2 @@
+When reporting correlations, include direction, magnitude, and p-value.
+Example: "There is a moderate positive correlation between X and Y (r=0.35, p=0.002)."

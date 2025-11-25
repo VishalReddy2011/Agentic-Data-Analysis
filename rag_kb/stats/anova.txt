@@ -1,0 +1,1 @@
+One-way ANOVA tests for difference in means across more than two groups. Assumptions: normality and homogeneity of variances. Report F-statistic, p-value, and post-hoc tests (Tukey) for pairwise comparisons.

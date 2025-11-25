@@ -1,0 +1,1 @@
+If variance changes across levels of a predictor, use robust standard errors or transform the data. Report checks for heteroscedasticity.

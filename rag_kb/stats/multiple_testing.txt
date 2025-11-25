@@ -1,0 +1,1 @@
+When running many tests, control false positives using adjustments: Bonferroni, Benjamini-Hochberg (FDR). Report adjusted p-values when applicable.

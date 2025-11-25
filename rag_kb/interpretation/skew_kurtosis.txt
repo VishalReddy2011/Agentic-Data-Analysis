@@ -1,0 +1,1 @@
+Skewness and kurtosis describe distribution shape. Positive skew = long right tail. If distributions are heavily skewed, consider transformations or nonparametric tests.

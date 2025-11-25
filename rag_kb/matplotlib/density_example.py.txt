@@ -1,0 +1,7 @@
+import matplotlib.pyplot as plt
+vals = df['{col}'].dropna().astype(float)
+plt.figure()
+vals.plot(kind='density')
+plt.title('Density of {col}')
+plt.tight_layout()
+plt.savefig('static/images/{session_id}_plot_{iteration}_density.png')

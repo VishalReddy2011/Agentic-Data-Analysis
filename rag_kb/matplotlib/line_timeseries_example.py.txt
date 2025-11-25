@@ -1,0 +1,10 @@
+import matplotlib.pyplot as plt
+series = pd.to_datetime(df['{date_col}'])
+vals = df['{value_col}']
+plt.figure(figsize=(8,3))
+plt.plot(series, vals)
+plt.xlabel('{date_col}')
+plt.ylabel('{value_col}')
+plt.title('Time series of {value_col}')
+plt.tight_layout()
+plt.savefig('static/images/{session_id}_plot_{iteration}_timeseries.png')

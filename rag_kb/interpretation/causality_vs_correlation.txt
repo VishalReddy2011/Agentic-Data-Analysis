@@ -1,0 +1,1 @@
+Correlation does not imply causation. Only randomized experiments or causal inference methods support causal claims; discuss possible confounders.

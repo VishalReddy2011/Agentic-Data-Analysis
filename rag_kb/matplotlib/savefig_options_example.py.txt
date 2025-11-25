@@ -1,0 +1,5 @@
+import matplotlib.pyplot as plt
+plt.figure()
+plt.plot(df['{col}'].dropna().astype(float))
+plt.tight_layout()
+plt.savefig('static/images/{session_id}_plot_{iteration}_options.png', dpi=150)

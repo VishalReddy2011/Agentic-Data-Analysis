@@ -1,0 +1,1 @@
+Independent two-sample t-test compares means of two independent groups. Assumptions: approximate normality, similar variances (or use Welch's t-test). Output: t-statistic, degrees of freedom, p-value. Report effect size (Cohen's d) if possible.

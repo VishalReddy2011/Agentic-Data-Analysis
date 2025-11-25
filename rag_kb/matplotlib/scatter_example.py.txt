@@ -1,0 +1,10 @@
+import matplotlib.pyplot as plt
+x = df['{x}'].dropna().astype(float)
+y = df['{y}'].dropna().astype(float)
+plt.figure(figsize=(6,4))
+plt.scatter(x, y, s=8, alpha=0.7)
+plt.xlabel('{x}')
+plt.ylabel('{y}')
+plt.title('Scatter: {x} vs {y}')
+plt.tight_layout()
+plt.savefig('static/images/{session_id}_plot_{iteration}_scatter.png')

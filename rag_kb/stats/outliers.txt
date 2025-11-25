@@ -1,0 +1,1 @@
+Outliers are extreme observations that can distort estimates. Detect using IQR rule, z-scores, or visual methods. Decide whether to transform, winsorize, or exclude based on context.

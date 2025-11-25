@@ -1,0 +1,2 @@
+Keep insights concise (1-2 sentences). Start with the finding, then add the metric and its value.
+Example: "Average session time is higher for Group A (M=12.3s) than Group B (M=9.8s); difference d=0.4, p=0.03."

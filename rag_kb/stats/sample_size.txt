@@ -1,0 +1,1 @@
+Sample size planning ensures adequate power to detect meaningful effects. Compute power given effect size, alpha, and desired power (commonly 0.8). Small samples limit inference.

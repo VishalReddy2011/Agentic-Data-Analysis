@@ -1,0 +1,1 @@
+A 95% CI that does not include zero suggests the estimate is statistically distinguishable from zero at α=0.05. Always report both bounds and the level used.

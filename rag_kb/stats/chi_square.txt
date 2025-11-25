@@ -1,0 +1,1 @@
+Chi-square test of independence for two categorical variables. Use contingency table; report chi-square statistic, degrees of freedom, and p-value. If expected cell counts <5 use Fisher's Exact Test for 2x2 tables.

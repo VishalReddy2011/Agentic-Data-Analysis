@@ -1,0 +1,1 @@
+If data are MCAR, simple deletion may be unbiased. If MAR, use multiple imputation. Report the chosen strategy and sensitivity analyses when missingness could influence conclusions.

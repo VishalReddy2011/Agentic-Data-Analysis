@@ -1,0 +1,1 @@
+Missing data mechanisms: MCAR (missing completely at random), MAR (missing at random), MNAR (missing not at random). Assess missingness patterns and decide imputation or analysis strategy accordingly.

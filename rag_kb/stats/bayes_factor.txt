@@ -1,0 +1,1 @@
+Bayes factor compares predictive support for two hypotheses; BF >1 favors the alternative. Provides an alternative to p-values with graded evidence interpretation.

@@ -1,0 +1,6 @@
+import matplotlib.pyplot as plt
+cross = pd.crosstab(df['{col1}'], df['{col2}'])
+cross.plot(kind='bar', stacked=True)
+plt.title('Stacked bar: {col1} vs {col2}')
+plt.tight_layout()
+plt.savefig('static/images/{session_id}_plot_{iteration}_stacked.png')

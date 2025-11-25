@@ -1,0 +1,1 @@
+Bootstrap CIs can be asymmetrical and provide robust inference for complex estimators. Report bootstrap method and number of resamples.

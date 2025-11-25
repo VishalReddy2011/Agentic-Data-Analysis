@@ -1,0 +1,1 @@
+Spearman rank correlation measures monotonic association using ranks. Use when data are ordinal or not normally distributed; outputs rho and p-value.

@@ -1,0 +1,1 @@
+p-value is the probability of observing data as extreme (or more) under the null hypothesis. A small p-value (conventional threshold 0.05) suggests evidence against the null; it is not the probability the null is true. Always report effect sizes and confidence intervals alongside p-values.

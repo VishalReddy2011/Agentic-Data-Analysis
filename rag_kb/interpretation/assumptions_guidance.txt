@@ -1,0 +1,1 @@
+State test/model assumptions explicitly (normality, independence, homoscedasticity). Perform diagnostics and report violations.

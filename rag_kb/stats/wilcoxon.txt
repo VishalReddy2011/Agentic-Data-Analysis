@@ -1,0 +1,1 @@
+Wilcoxon signed-rank test compares paired samples (e.g., before/after measurements). Nonparametric alternative to paired t-test; reports W statistic and p-value.

@@ -1,0 +1,1 @@
+For categorical tests, examine expected cell counts. Use Fisher's Exact for small samples. Report observed/expected counts for transparency.

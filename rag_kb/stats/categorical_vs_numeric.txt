@@ -1,0 +1,1 @@
+When comparing categorical and numeric variables, use group summaries and appropriate tests: - numeric outcome + categorical predictor: t-test/ANOVA (or nonparametric alternatives) - categorical outcome + categorical predictor: chi-square / Fisher's exact

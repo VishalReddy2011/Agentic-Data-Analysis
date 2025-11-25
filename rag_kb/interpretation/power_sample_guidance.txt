@@ -1,0 +1,1 @@
+Low power increases false negatives. Report power for key hypotheses or justify sample size decisions. If underpowered, interpret non-significant results cautiously.

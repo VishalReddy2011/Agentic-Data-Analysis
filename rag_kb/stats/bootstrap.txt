@@ -1,0 +1,1 @@
+Bootstrap resampling estimates sampling distributions by repeated resampling with replacement. Use for robust CIs or when analytic variance estimates are unreliable.

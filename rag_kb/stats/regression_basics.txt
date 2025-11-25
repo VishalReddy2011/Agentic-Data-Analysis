@@ -1,0 +1,1 @@
+Linear regression models the relationship between a numeric outcome and one or more predictors. Report coefficients, standard errors, p-values, R-squared, and residual diagnostics (linearity, homoscedasticity).

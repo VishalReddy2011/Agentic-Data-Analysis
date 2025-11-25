@@ -1,0 +1,1 @@
+Adjust for multiple comparisons when testing many hypotheses. FDR control (Benjamini-Hochberg) balances discovery and error rate.

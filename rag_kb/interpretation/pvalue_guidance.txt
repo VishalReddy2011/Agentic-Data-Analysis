@@ -1,0 +1,1 @@
+p-values quantify evidence against the null; smaller is stronger evidence. Thresholds (conventional): <0.05 'statistically significant', <0.01 'highly significant'. Always contextualize with effect sizes and sample size.

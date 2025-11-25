@@ -1,0 +1,1 @@
+When outliers exist, check data quality first. If valid, consider robust statistics or transformations. Do not remove outliers solely to get significance; justify exclusions.

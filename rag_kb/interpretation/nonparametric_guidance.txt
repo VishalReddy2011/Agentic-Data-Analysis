@@ -1,0 +1,1 @@
+Use nonparametric tests (e.g., Mann-Whitney, Wilcoxon) when assumptions of parametric tests fail. Note that nonparametric tests assess different null hypotheses (often distributional equality).

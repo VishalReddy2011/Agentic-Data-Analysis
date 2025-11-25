@@ -1,0 +1,1 @@
+Kendall's tau is a rank correlation metric robust to ties and small samples. Interpretation similar to Spearman; useful for ordinal data.

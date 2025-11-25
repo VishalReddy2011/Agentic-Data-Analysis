@@ -1,0 +1,1 @@
+Scaling (standardization) subtracts mean and divides by SD; normalization rescales to [0,1]. Use scaling for algorithms sensitive to feature scale or when comparing coefficients.

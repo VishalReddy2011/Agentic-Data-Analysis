@@ -1,0 +1,1 @@
+Pearson correlation measures linear association between two continuous variables. Use when both variables are numeric and relationship is linear. Outputs: correlation coefficient r (range -1 to 1) and p-value. Interpretation: |r| < 0.1 ~ none, 0.1-0.3 small, 0.3-0.5 moderate, >0.5 strong. Report sample size and p-value.

@@ -1,0 +1,1 @@
+Effect size quantifies the magnitude of an effect independent of sample size. Common measures: Cohen's d (for means), Pearson's r (for correlations), odds ratio (for binary outcomes). Report effect sizes to convey practical significance.

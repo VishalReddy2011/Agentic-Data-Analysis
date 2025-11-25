@@ -1,0 +1,2 @@
+Always include sample size and relevant CI or p-values for transparency.
+Example: "N=420. Mean difference = 1.2 (95% CI [0.3, 2.1]), p=0.01."
