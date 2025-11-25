@@ -14,3 +14,7 @@ class AgentInsight(BaseModel):
         default=None,
         description="Path to the saved graph image."
     )
+    model_config = {
+        "extra": "forbid",
+        "validate_assignment": True
+    }

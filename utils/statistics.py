@@ -11,10 +11,7 @@ class DescriptiveStats(BaseModel):
     numeric_stats_df: pd.DataFrame
     categorical_stats_df: pd.DataFrame
     value_counts: Dict[str, Dict[str, int]]
-
-    class Config:
-        arbitrary_types_allowed = True
-
+    model_config = {"arbitrary_types_allowed": True}
 
 def generate_descriptive_stats(csv_path: str) -> DescriptiveStats:
     df = pd.read_csv(csv_path)
