@@ -1,1 +1,4 @@
 .env
+commit_messages.txt
+
+# git log --pretty=format:"%s" --reverse > commit_messages.txt
