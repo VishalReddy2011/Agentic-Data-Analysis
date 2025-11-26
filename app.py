@@ -12,6 +12,9 @@ from agent.schemas import AgentInsight
 from utils.statistics import generate_descriptive_stats
 from utils.pdf_generator import build_report
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 UPLOAD_DIR = "./uploads"
 REPORT_DIR = "./reports"

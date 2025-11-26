@@ -3,3 +3,9 @@ commit_messages.txt
 misc.text
 __pychache__/
 *.pyc
+reports/*
+!reports/.gitkeep
+uploads/*
+!uploads/.gitkeep
+static/images/*
+!static/images/.gitkeep
