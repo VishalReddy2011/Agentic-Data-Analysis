@@ -1,9 +1,0 @@
-import matplotlib.pyplot as plt
-x = df['{x}'].dropna().astype(float)
-y = df['{y}'].dropna().astype(float)
-plt.figure()
-plt.scatter(x,y)
-max_idx = y.idxmax()
-plt.annotate('max', xy=(x[max_idx], y[max_idx]))
-plt.tight_layout()
-plt.savefig('static/images/{session_id}_plot_{iteration}_annotate.png')

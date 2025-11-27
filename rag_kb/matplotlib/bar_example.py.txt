@@ -1,7 +1,0 @@
-import matplotlib.pyplot as plt
-vc = df['{col}'].value_counts().head(10)
-plt.figure()
-vc.plot.bar()
-plt.title('Top 10 {col}')
-plt.tight_layout()
-plt.savefig('static/images/{session_id}_plot_{iteration}_bar.png')

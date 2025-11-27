@@ -1,9 +1,0 @@
-import matplotlib.pyplot as plt
-import numpy as np
-mat = df.pivot_table(index='{row}', columns='{col}', values='{value}', aggfunc='mean').fillna(0)
-plt.figure(figsize=(6,4))
-plt.imshow(mat, aspect='auto')
-plt.colorbar()
-plt.title('Heatmap')
-plt.tight_layout()
-plt.savefig('static/images/{session_id}_plot_{iteration}_heatmap.png')

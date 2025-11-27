@@ -9,11 +9,7 @@ class AgentInsight(BaseModel):
     technique_used: str = Field(
         description="Statistical technique used, e.g., Pearson Correlation."
     )
-
-    graph_filename: Optional[str] = Field(
-        default=None,
-        description="Path to the saved graph image."
-    )
+    
     model_config = {
         "extra": "forbid",
         "validate_assignment": True

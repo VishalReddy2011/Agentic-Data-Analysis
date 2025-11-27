@@ -167,6 +167,7 @@ dependencies:
       - langchain-classic==1.0.0
       - langchain-community==0.4.1
       - langchain-core==1.1.0
+      - langchain-ollama==1.0.0
       - langchain-openai==1.1.0
       - langchain-text-splitters==1.0.0
       - langgraph==1.0.3
@@ -177,6 +178,7 @@ dependencies:
       - marshmallow==3.26.1
       - multidict==6.7.0
       - mypy-extensions==1.1.0
+      - ollama==0.6.1
       - openai==2.8.1
       - orjson==3.11.4
       - ormsgpack==1.12.0

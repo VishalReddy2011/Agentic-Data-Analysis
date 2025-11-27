@@ -21,15 +21,11 @@ def _load_folder_texts(folder: str) -> List[str]:
 def load_stats_definitions() -> List[str]:
     return _load_folder_texts("stats")
 
-# RAG-2: Matplotlib examples
-def load_matplotlib_examples() -> List[str]:
-    return _load_folder_texts("matplotlib")
-
-# RAG-3: Style guide examples
+# RAG-2: Style guide examples
 def load_style_guide() -> List[str]:
     return _load_folder_texts("style")
 
-# RAG-4: Interpretation guide
+# RAG-3: Interpretation guide
 def load_interpretation_guide() -> List[str]:
     return _load_folder_texts("interpretation")
 
@@ -37,7 +33,6 @@ def load_interpretation_guide() -> List[str]:
 def load_all_rag() -> Dict[str, List[str]]:
     return {
         "stats": load_stats_definitions(),
-        "matplotlib": load_matplotlib_examples(),
         "style": load_style_guide(),
         "interpretation": load_interpretation_guide(),
     }

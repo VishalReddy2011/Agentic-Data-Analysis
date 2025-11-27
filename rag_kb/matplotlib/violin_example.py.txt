@@ -1,7 +1,0 @@
-import matplotlib.pyplot as plt
-data = [df[df['{group}']==g]['{col}'].dropna().astype(float) for g in df['{group}'].unique()]
-plt.figure()
-plt.violinplot(data)
-plt.title('Violin plot of {col} by {group}')
-plt.tight_layout()
-plt.savefig('static/images/{session_id}_plot_{iteration}_violin.png')

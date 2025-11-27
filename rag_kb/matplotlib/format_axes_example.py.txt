@@ -1,7 +1,0 @@
-import matplotlib.pyplot as plt
-plt.figure()
-plt.plot(df['{col}'].dropna().astype(float))
-plt.title('{col}')
-plt.gca().ticklabel_format(style='plain', useOffset=False)
-plt.tight_layout()
-plt.savefig('static/images/{session_id}_plot_{iteration}_format.png')

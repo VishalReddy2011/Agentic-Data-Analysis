@@ -1,7 +1,0 @@
-import matplotlib.pyplot as plt
-groups = [df[df['{group}']==g]['{col}'].dropna().astype(float) for g in df['{group}'].unique()]
-plt.figure()
-plt.boxplot(groups, labels=df['{group}'].unique())
-plt.title('Boxplot of {col} by {group}')
-plt.tight_layout()
-plt.savefig('static/images/{session_id}_plot_{iteration}_box.png')

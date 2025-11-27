@@ -1,7 +1,0 @@
-import matplotlib.pyplot as plt
-plt.figure()
-plt.scatter(df['{x}'], df['{y}'], c=df['{color_col}'])
-plt.colorbar()
-plt.title('Colored scatter')
-plt.tight_layout()
-plt.savefig('static/images/{session_id}_plot_{iteration}_color.png')

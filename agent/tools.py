@@ -1,22 +1,20 @@
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field, ValidationError
 import pandas as pd
-import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import scipy.stats as stats
-import io
-import os
 import traceback
-import base64
-import uuid
+import os
 import contextlib
+import io
 
-# Pydantic models
 
 class ProfileInput(BaseModel):
     file_path: str
 
     model_config = {"extra": "forbid", "validate_assignment": True}
+
 
 class ColumnProfile(BaseModel):
     name: str
@@ -26,6 +24,7 @@ class ColumnProfile(BaseModel):
 
     model_config = {"extra": "forbid", "validate_assignment": True}
 
+
 class ProfileOutput(BaseModel):
     row_count: int
     column_count: int
@@ -33,6 +32,7 @@ class ProfileOutput(BaseModel):
     head: List[Dict[str, Any]]
 
     model_config = {"extra": "forbid", "validate_assignment": True}
+
 
 class CodeInput(BaseModel):
     code: str
@@ -43,8 +43,9 @@ class CodeInput(BaseModel):
 
     model_config = {"extra": "forbid", "validate_assignment": True}
 
+
 class CodeOutput(BaseModel):
-    status: str = Field(description="success | error")
+    status: str
     stdout: Optional[str] = None
     error: Optional[str] = None
     images: List[str] = Field(default_factory=list)
@@ -53,22 +54,12 @@ class CodeOutput(BaseModel):
     model_config = {"extra": "forbid", "validate_assignment": True}
 
 
-# Helper
-
-def _capture_exec(code: str, safe_globals: Dict[str, Any], safe_locals: Dict[str, Any]):
-    buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(buf):
-            exec(code, safe_globals, safe_locals)
-        stdout = buf.getvalue()
-        return {"stdout": stdout, "locals": safe_locals, "error": None}
-    except Exception as e:
-        tb = traceback.format_exc()
-        return {"stdout": buf.getvalue(), "locals": safe_locals, "error": tb}
-
-# Tool: get_csv_profile
+# -------------------------------------------------------------------
+# SIMPLE, DIRECT, UNSANDBOXED EXECUTION
+# -------------------------------------------------------------------
 
 def get_csv_profile(input_data: Dict) -> Dict:
+    """Reads CSV and returns metadata."""
     try:
         inp = ProfileInput.model_validate(input_data)
     except ValidationError as e:
@@ -83,16 +74,15 @@ def get_csv_profile(input_data: Dict) -> Dict:
         ser = df[col]
         if pd.api.types.is_numeric_dtype(ser):
             dtype = "numeric"
-            unique_count = int(ser.nunique(dropna=True))
         elif pd.api.types.is_datetime64_any_dtype(ser):
             dtype = "datetime"
-            unique_count = int(ser.nunique(dropna=True))
         else:
             dtype = "categorical"
-            unique_count = int(ser.nunique(dropna=True))
+
+        unique_count = int(ser.nunique(dropna=True))
         sample = ser.dropna().astype(str).head(5).tolist()
-        columns[str(col)] = ColumnProfile(
-            name=str(col),
+        columns[col] = ColumnProfile(
+            name=col,
             dtype=dtype,
             unique_count=unique_count,
             sample_values=sample
@@ -108,93 +98,63 @@ def get_csv_profile(input_data: Dict) -> Dict:
     )
     return out.model_dump()
 
-# Tool: run_python_code
 
 def run_python_code(input_data: Dict) -> Dict:
+    """Executes LLM-generated Python code directly. No sandbox."""
     try:
         inp = CodeInput.model_validate(input_data)
     except ValidationError as e:
-        return {"status": "error", "error": f"CodeInput validation error: {e}", "stdout": None, "images": [], "result": None}
+        return {
+            "status": "error",
+            "error": f"CodeInput validation error: {e}",
+            "stdout": None,
+            "images": [],
+            "result": None,
+        }
 
-    safe_globals: Dict[str, Any] = {
-        "__builtins__": {
-            "abs": abs,
-            "min": min,
-            "max": max,
-            "sum": sum,
-            "len": len,
-            "range": range,
-            "enumerate": enumerate,
-            "float": float,
-            "int": int,
-            "str": str,
-            "bool": bool,
-            "list": list,
-            "dict": dict,
-            "set": set,
-            "tuple": tuple,
-        },
-        "pd": pd,
-        "np": np,
-        "plt": plt,
-        "stats": stats,
-    }
-
-    safe_locals: Dict[str, Any] = {}
-
+    df = None
     if inp.csv_path:
         try:
             df = pd.read_csv(inp.csv_path)
-            safe_globals["df"] = df
-            safe_locals["df"] = df
         except Exception as e:
-            return {"status": "error", "error": f"Failed to load CSV: {e}", "stdout": None, "images": [], "result": None}
+            return {
+                "status": "error",
+                "error": f"Failed to load CSV: {e}",
+                "stdout": None,
+                "images": [],
+                "result": None,
+            }
 
-    unique_prefix = inp.session_id or str(uuid.uuid4())
-    iteration = inp.iteration_count or 0
+    local_vars = {"df": df}
 
-    exec_result = _capture_exec(inp.code, safe_globals, safe_locals)
+    buf = io.StringIO()
+    error = None
 
-    stdout = exec_result["stdout"]
-    error = exec_result["error"]
-    locals_after = exec_result["locals"]
-
-    images: List[str] = []
-
-    # Detect common matplotlib saves in locals or created figures
-    # If user code set a variable 'saved_images' with paths, respect it.
-    if "saved_images" in locals_after:
-        try:
-            for p in locals_after["saved_images"]:
-                if isinstance(p, str) and os.path.exists(p):
-                    images.append(p)
-        except Exception:
-            pass
-
-    # Also check for open figures and save them automatically
     try:
-        figs = [plt.figure(n) for n in plt.get_fignums()]
-        for idx, fig in enumerate(figs, start=1):
-            img_name = f"{unique_prefix}_plot_{iteration}_{idx}.png"
-            img_path = os.path.join(inp.work_dir, img_name)
-            fig.savefig(img_path, bbox_inches="tight")
-            images.append(img_path)
-        plt.close("all")
+        with contextlib.redirect_stdout(buf):
+            exec(inp.code, {}, local_vars)
     except Exception:
-        pass
+        error = traceback.format_exc()
 
-    result_obj = None
-    if "result" in locals_after:
-        try:
-            result_obj = locals_after["result"]
-        except Exception:
-            result_obj = None
+    stdout = buf.getvalue()
 
-    out = CodeOutput(
+    # Save matplotlib figures
+    images = []
+    figs = [plt.figure(n) for n in plt.get_fignums()]
+    for idx, fig in enumerate(figs, start=1):
+        os.makedirs(inp.work_dir, exist_ok=True)
+        filename = f"{inp.session_id}_plot_{inp.iteration_count}_{idx}.png"
+        path = os.path.join(inp.work_dir, filename)
+        fig.savefig(path, bbox_inches="tight")
+        images.append(path)
+    plt.close("all")
+
+    result_obj = local_vars.get("result")
+
+    return CodeOutput(
         status="success" if error is None else "error",
         stdout=stdout if stdout else None,
         error=error,
         images=images,
         result=result_obj
-    )
-    return out.model_dump()
+    ).model_dump()

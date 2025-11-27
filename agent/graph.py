@@ -1,43 +1,64 @@
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-import os
+import subprocess
 
 from agent.schemas import AgentInsight
 from agent.tools import get_csv_profile, run_python_code
-from agent.rag import (
-    load_stats_definitions,
-    load_style_guide,
-    load_interpretation_guide,
-    load_matplotlib_examples
-)
+from agent.rag import load_style_guide
 
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 
 from dotenv import load_dotenv
 load_dotenv()
 
+reason_model = "mistral:instruct"
+vision_model = "moondream:1.8b"
+models = { "reason": reason_model, "vision": vision_model }
 
 class AgentState(BaseModel):
     session_id: str
     csv_path: str
     column_profile: Dict[str, Any] = Field(default_factory=dict)
     final_insights: List[AgentInsight] = Field(default_factory=list)
-    agent_scratchpad: List[Any] = Field(default_factory=list)
     current_plan: str = ""
+    plan_history: List[str] = Field(default_factory=list)
     current_tool_output: Any = None
-    visualization_code: str = ""
-    iteration_count: int = 0
     insight: Optional[AgentInsight] = None
 
+def _kill_ollama_model():
+    result = subprocess.run(
+        ["ollama", "ps"],
+        capture_output=True,
+        text=True
+    )
+    print(result.stdout)
+    lines = result.stdout.splitlines()
+    if len(lines) > 1:
+        model_name = lines[1].split()[0]
+        subprocess.run(
+            ["ollama", "stop", model_name],
+            capture_output=True,
+            text=True
+        )
 
-def create_model() -> ChatOpenAI:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY not set")
-    return ChatOpenAI(model="gpt-4o-mini", temperature=0)
+def _get_current_ollama_model():
+    result = subprocess.run(
+        ["ollama", "ps"],
+        capture_output=True,
+        text=True
+    )
+    print(result.stdout)
+    lines = result.stdout.splitlines()
+    if len(lines) > 1:
+        model_name = lines[1].split()[0]
+        return model_name
+    return None
 
-
-# GRAPH NODES
+def _create_model(type: str) -> ChatOllama:
+    if _get_current_ollama_model() != models[type]:
+        _kill_ollama_model()
+    return ChatOllama(model=models[type], temperature=0)
 
 def profile_data_node(state: AgentState) -> Dict[str, Any]:
     out = get_csv_profile({"file_path": state.csv_path})
@@ -45,17 +66,16 @@ def profile_data_node(state: AgentState) -> Dict[str, Any]:
 
 
 def plan_analysis_node(state: AgentState) -> Dict[str, Any]:
-    llm = create_model()
+    llm = _create_model(type="reason")
 
-    rag_stats = "\n".join(load_stats_definitions())
-    rag_interpret = "\n".join(load_interpretation_guide())
-
-    prompt = f"""
-You are an expert data analyst.
-You must output ONE plan command ONLY.
+    plan_prompt = f"""
+You are an expert data analyst. Output ONE plan command ONLY.
 
 CSV Profile:
 {state.column_profile}
+
+Previous plans:
+{" ,".join(state.plan_history) if state.plan_history else 'None'}
 
 Available commands:
 - correlate colA colB
@@ -64,30 +84,30 @@ Available commands:
 - finish
 
 Rules:
-- If enough analysis done or nothing left → return "finish".
-- Otherwise choose the next valid command.
+- Never repeat a previous plan.
+- If nothing left to analyze, return "finish".
+- Answer in plain text, no formatting.
 
-Statistical knowledge:
-{rag_stats}
-
-Interpretation rules:
-{rag_interpret}
-
-Return only one line: the exact command.
+Return only the command in the exact given format in 'Available commands'.
 """
 
-    plan = llm.invoke(prompt).content.strip().splitlines()[0]
-    return {"current_plan": plan}
+    resp = llm.invoke(plan_prompt)
+    plan = resp.content.strip().splitlines()[0]
+    return {"current_plan": plan, "plan_history": state.plan_history + [plan]}
 
 
 def execute_tool_node(state: AgentState) -> Dict[str, Any]:
-    plan = state.current_plan
-    tokens = plan.split()
-    cmd = tokens[0].lower()
+    plan = state.current_plan.strip().lower()
 
-    session_id = state.session_id
-    iteration = state.iteration_count
+    if plan == "finish":
+        return {"current_tool_output": None}
+
+    tokens = plan.split()
+    cmd = tokens[0]
+
     csv_path = state.csv_path
+    session_id = state.session_id
+    iteration = len(state.final_insights)
 
     if cmd == "correlate" and len(tokens) >= 3:
         a, b = tokens[1], tokens[2]
@@ -96,9 +116,14 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             f"a = df['{a}'].dropna().astype(float)\n"
             f"b = df['{b}'].dropna().astype(float)\n"
             "corr, p = stats.pearsonr(a, b)\n"
-            "result = {'correlation': float(corr), 'pvalue': float(p)}\n"
-            "print('correlation:', corr)\n"
-            "print('pvalue:', p)\n"
+            "result = {'type': 'numeric', 'correlation': float(corr), 'pvalue': float(p)}\n"
+        )
+
+    elif cmd == "value_counts" and len(tokens) >= 2:
+        col = tokens[1]
+        code = (
+            f"vc = df['{col}'].value_counts().head(20).to_dict()\n"
+            "result = {'type': 'numeric', 'value_counts': vc}\n"
         )
 
     elif cmd == "histogram" and len(tokens) >= 2:
@@ -109,28 +134,20 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             "plt.figure()\n"
             f"plt.hist(vals, bins=30)\n"
             f"plt.title('Histogram of {col}')\n"
-            "path = f'static/images/{session_id}_plot_{iteration}_hist.png'\n"
+            f"path = f'static/images/{session_id}_plot_{iteration}_hist.png'\n"
             "plt.savefig(path, bbox_inches='tight')\n"
-            "saved_images = [path]\n"
-        )
-
-    elif cmd == "value_counts" and len(tokens) >= 2:
-        col = tokens[1]
-        code = (
-            f"vc = df['{col}'].value_counts().head(20).to_dict()\n"
-            "result = vc\n"
-            "print('value_counts:', vc)\n"
+            "result = {'type': 'image', 'image_path': path}\n"
         )
 
     else:
-        raise ValueError(f"Unknown plan command: {plan}")
+        raise ValueError(f"Unknown command: {plan}")
 
     payload = {
         "code": code,
         "csv_path": csv_path,
         "session_id": session_id,
         "iteration_count": iteration,
-        "work_dir": "static/images"
+        "work_dir": "./static/images"
     }
 
     out = run_python_code(payload)
@@ -138,91 +155,64 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
 
 
 def generate_insight_node(state: AgentState) -> Dict[str, Any]:
-    llm = create_model().with_structured_output(schema=AgentInsight)
+    output = state.current_tool_output
 
     rag_style = "\n".join(load_style_guide())
-    rag_interpret = "\n".join(load_interpretation_guide())
-    rag_stats = "\n".join(load_stats_definitions())
 
-    prompt = f"""
-You are a senior data analyst.
+    if output is None:
+        return {"insight": None}
 
+    tool_result = output.get("result")
+    is_image = isinstance(tool_result, dict) and tool_result.get("type") == "image"
+
+    if is_image:
+        img_path = tool_result["image_path"]
+        llm = _create_model(type="vision").with_structured_output(schema = AgentInsight)
+
+        prompt = f"""
 PLAN: {state.current_plan}
-TOOL OUTPUT: {state.current_tool_output}
+A graph image is provided. Analyze it and produce one concise, professional insight in one sentence. Do not use any markdown formatting. Do not mention anything else.
 
-Your tasks:
-1. Interpret the statistical results accurately.
-2. Produce a concise professional insight.
-3. Follow the style rules below.
-
-Style Guide:
+Styling rules:
 {rag_style}
-
-Interpretation Guide:
-{rag_interpret}
-
-Statistical Definitions:
-{rag_stats}
-
-Return ONLY a valid AgentInsight object.
 """
 
-    insight = llm.invoke(prompt)
-    return {"insight": insight}
+        resp = llm.invoke([
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": img_path}
+                ]
+            }
+        ])
 
+        return {"insight": resp}
 
-def generate_visualization_node(state: AgentState) -> Dict[str, Any]:
-    llm = create_model()
+    else:
+        llm = _create_model(type="reason").with_structured_output(schema = AgentInsight)
 
-    rag_matplotlib = "\n".join(load_matplotlib_examples())
+        prompt = f"""
+PLAN: {state.current_plan}
 
-    prompt = f"""
-You must write Python matplotlib code to visualize the following insight:
+Numeric Result:
+{tool_result}
 
-INSIGHT:
-{state.insight}
-
-CSV columns can be accessed via df['col_name'].
-
-Rules:
-- Produce exactly one visualization.
-- Use a clean, minimal style.
-- Use the examples for reference.
-- Save the figure to:
-  static/images/{state.session_id}_plot_{state.iteration_count}_viz.png
-
-Matplotlib Examples:
-{rag_matplotlib}
-
-Return ONLY valid Python code. No explanation.
+Styling rules:
+{rag_style}
 """
 
-    code = llm.invoke(prompt).content
-    return {"visualization_code": code}
+        resp = llm.invoke(prompt)
+        return {"insight": resp}
 
-
-def execute_visualization_node(state: AgentState) -> Dict[str, Any]:
-    payload = {
-        "code": state.visualization_code,
-        "csv_path": state.csv_path,
-        "session_id": state.session_id,
-        "iteration_count": state.iteration_count,
-        "work_dir": "static/images"
-    }
-    out = run_python_code(payload)
-    return {"visualization_out": out}
 
 
 def add_to_final_list_node(state: AgentState) -> Dict[str, Any]:
     fin = list(state.final_insights)
-    fin.append(state.insight)
-    return {
-        "final_insights": fin,
-        "iteration_count": state.iteration_count + 1
-    }
+    if state.insight:
+        fin.append(state.insight)
+    return {"final_insights": fin}
 
-
-# GRAPH BUILD
 
 graph = StateGraph(AgentState)
 
@@ -230,23 +220,21 @@ graph.add_node("profile_data", profile_data_node)
 graph.add_node("plan_analysis", plan_analysis_node)
 graph.add_node("execute_tool", execute_tool_node)
 graph.add_node("generate_insight", generate_insight_node)
-graph.add_node("generate_visualization", generate_visualization_node)
-graph.add_node("execute_visualization", execute_visualization_node)
 graph.add_node("add_to_final_list", add_to_final_list_node)
 
 graph.set_entry_point("profile_data")
 
 
 def should_finish(state: AgentState) -> bool:
+    if len(state.final_insights) >= 5:
+        return True
     return (state.current_plan or "").strip().lower() == "finish"
 
 
 graph.add_edge("profile_data", "plan_analysis")
 graph.add_conditional_edges("plan_analysis", should_finish, {True: END, False: "execute_tool"})
 graph.add_edge("execute_tool", "generate_insight")
-graph.add_edge("generate_insight", "generate_visualization")
-graph.add_edge("generate_visualization", "execute_visualization")
-graph.add_edge("execute_visualization", "add_to_final_list")
+graph.add_edge("generate_insight", "add_to_final_list")
 graph.add_edge("add_to_final_list", "plan_analysis")
 
 app_agent = graph.compile()
