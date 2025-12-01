@@ -9,3 +9,5 @@ uploads/*
 !uploads/.gitkeep
 static/images/*
 !static/images/.gitkeep
+*.txt
+*.ipynb

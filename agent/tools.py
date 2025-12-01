@@ -10,12 +10,6 @@ import contextlib
 import io
 
 
-class ProfileInput(BaseModel):
-    file_path: str
-
-    model_config = {"extra": "forbid", "validate_assignment": True}
-
-
 class ColumnProfile(BaseModel):
     name: str
     dtype: str
@@ -34,38 +28,13 @@ class ProfileOutput(BaseModel):
     model_config = {"extra": "forbid", "validate_assignment": True}
 
 
-class CodeInput(BaseModel):
-    code: str
-    csv_path: Optional[str] = None
-    session_id: Optional[str] = None
-    iteration_count: Optional[int] = None
-    work_dir: Optional[str] = "static/images"
-
-    model_config = {"extra": "forbid", "validate_assignment": True}
-
-
-class CodeOutput(BaseModel):
-    status: str
-    stdout: Optional[str] = None
-    error: Optional[str] = None
-    images: List[str] = Field(default_factory=list)
-    result: Optional[Any] = None
-
-    model_config = {"extra": "forbid", "validate_assignment": True}
-
-
 # -------------------------------------------------------------------
 # SIMPLE, DIRECT, UNSANDBOXED EXECUTION
 # -------------------------------------------------------------------
 
-def get_csv_profile(input_data: Dict) -> Dict:
-    """Reads CSV and returns metadata."""
-    try:
-        inp = ProfileInput.model_validate(input_data)
-    except ValidationError as e:
-        return {"error": f"ProfileInput validation error: {e}"}
+def get_csv_profile(csv_path: str) -> Dict:
 
-    df = pd.read_csv(inp.file_path)
+    df = pd.read_csv(csv_path)
     row_count = int(len(df))
     column_count = int(len(df.columns))
 
@@ -90,71 +59,34 @@ def get_csv_profile(input_data: Dict) -> Dict:
 
     head_records = df.head(5).to_dict(orient="records")
 
-    out = ProfileOutput(
-        row_count=row_count,
-        column_count=column_count,
-        columns=columns,
-        head=head_records
-    )
-    return out.model_dump()
+    return {
+        "row_count":row_count,
+        "column_count":column_count,
+        "columns":columns,
+        "head":head_records
+    }
 
 
-def run_python_code(input_data: Dict) -> Dict:
+def run_python_code(payload: Dict) -> Dict:
     """Executes LLM-generated Python code directly. No sandbox."""
-    try:
-        inp = CodeInput.model_validate(input_data)
-    except ValidationError as e:
-        return {
-            "status": "error",
-            "error": f"CodeInput validation error: {e}",
-            "stdout": None,
-            "images": [],
-            "result": None,
-        }
 
-    df = None
-    if inp.csv_path:
-        try:
-            df = pd.read_csv(inp.csv_path)
-        except Exception as e:
-            return {
-                "status": "error",
-                "error": f"Failed to load CSV: {e}",
-                "stdout": None,
-                "images": [],
-                "result": None,
-            }
-
+    df = pd.read_csv(payload['csv_path'])
     local_vars = {"df": df}
-
     buf = io.StringIO()
-    error = None
-
-    try:
-        with contextlib.redirect_stdout(buf):
-            exec(inp.code, {}, local_vars)
-    except Exception:
-        error = traceback.format_exc()
-
+    with contextlib.redirect_stdout(buf):
+        exec(payload['code'], {}, local_vars)
     stdout = buf.getvalue()
 
-    # Save matplotlib figures
-    images = []
-    figs = [plt.figure(n) for n in plt.get_fignums()]
-    for idx, fig in enumerate(figs, start=1):
-        os.makedirs(inp.work_dir, exist_ok=True)
-        filename = f"{inp.session_id}_plot_{inp.iteration_count}_{idx}.png"
-        path = os.path.join(inp.work_dir, filename)
-        fig.savefig(path, bbox_inches="tight")
-        images.append(path)
-    plt.close("all")
+    img_path = None
+    if plt.get_fignums():
+        fig = plt.gcf()
+        filename = f"{payload["session_id"]}_plot_{payload["iteration_count"]}.png"
+        img_path = os.path.join("./static/images", filename)
+        fig.savefig(img_path, bbox_inches="tight")
+    plt.close()
 
-    result_obj = local_vars.get("result")
-
-    return CodeOutput(
-        status="success" if error is None else "error",
-        stdout=stdout if stdout else None,
-        error=error,
-        images=images,
-        result=result_obj
-    ).model_dump()
+    return {
+        "stdout" : stdout if stdout else None,
+        "img_path" : img_path,
+        "result" : local_vars.get("result")
+    }

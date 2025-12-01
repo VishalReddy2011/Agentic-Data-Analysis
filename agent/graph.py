@@ -8,12 +8,15 @@ from agent.rag import load_style_guide
 
 from langgraph.graph import StateGraph, END
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from dotenv import load_dotenv
 load_dotenv()
 
+use_openai = True
 reason_model = "mistral:instruct"
 vision_model = "moondream:1.8b"
+
 models = { "reason": reason_model, "vision": vision_model }
 
 class AgentState(BaseModel):
@@ -23,7 +26,7 @@ class AgentState(BaseModel):
     final_insights: List[AgentInsight] = Field(default_factory=list)
     current_plan: str = ""
     plan_history: List[str] = Field(default_factory=list)
-    current_tool_output: Any = None
+    current_tool_output: Dict[str, Any] = None
     insight: Optional[AgentInsight] = None
 
 def _kill_ollama_model():
@@ -56,12 +59,14 @@ def _get_current_ollama_model():
     return None
 
 def _create_model(type: str) -> ChatOllama:
+    if use_openai:
+        return ChatOpenAI(model_name="gpt-4.1-nano", temperature=0)
     if _get_current_ollama_model() != models[type]:
         _kill_ollama_model()
     return ChatOllama(model=models[type], temperature=0)
 
 def profile_data_node(state: AgentState) -> Dict[str, Any]:
-    out = get_csv_profile({"file_path": state.csv_path})
+    out = get_csv_profile(state.csv_path)
     return {"column_profile": out}
 
 
@@ -134,9 +139,7 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
             "plt.figure()\n"
             f"plt.hist(vals, bins=30)\n"
             f"plt.title('Histogram of {col}')\n"
-            f"path = f'static/images/{session_id}_plot_{iteration}_hist.png'\n"
-            "plt.savefig(path, bbox_inches='tight')\n"
-            "result = {'type': 'image', 'image_path': path}\n"
+            "result = {'type': 'image'}\n"
         )
 
     else:
@@ -147,7 +150,6 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
         "csv_path": csv_path,
         "session_id": session_id,
         "iteration_count": iteration,
-        "work_dir": "./static/images"
     }
 
     out = run_python_code(payload)
