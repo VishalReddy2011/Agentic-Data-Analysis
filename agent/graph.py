@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 use_openai = True
-reason_model = "mistral:instruct"
+reason_model = "cogito:8b"
 vision_model = "moondream:1.8b"
 
 models = { "reason": reason_model, "vision": vision_model }
@@ -84,7 +84,6 @@ Previous plans:
 
 Available commands:
 - correlate colA colB
-- histogram col
 - value_counts col
 - finish
 
@@ -92,6 +91,7 @@ Rules:
 - Never repeat a previous plan.
 - If nothing left to analyze, return "finish".
 - Answer in plain text, no formatting.
+- correlate command can only be used on numerical columns.
 
 Return only the command in the exact given format in 'Available commands'.
 """
@@ -113,6 +113,7 @@ def execute_tool_node(state: AgentState) -> Dict[str, Any]:
     csv_path = state.csv_path
     session_id = state.session_id
     iteration = len(state.final_insights)
+    print(plan)
 
     if cmd == "correlate" and len(tokens) >= 3:
         a, b = tokens[1], tokens[2]
@@ -228,7 +229,7 @@ graph.set_entry_point("profile_data")
 
 
 def should_finish(state: AgentState) -> bool:
-    if len(state.final_insights) >= 5:
+    if len(state.final_insights) >= 2:
         return True
     return (state.current_plan or "").strip().lower() == "finish"
 
