@@ -10,10 +10,11 @@ from langgraph.graph import StateGraph, END
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
-use_openai = True
+use_openai = os.getenv("USE_OPENAI", "false") == "true"
 reason_model = "cogito:8b"
 vision_model = "moondream:1.8b"
 
